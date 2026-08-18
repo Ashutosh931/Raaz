@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings & Energy Preferences{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}Manage your user profile, default tariffs, and alert thresholds{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Profile & Billing Settings -->
+  <div class="col-lg-6">
+    <div class="energy-card mb-4">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-person-gear text-primary"></i>
+          User Profile & Billing Preferences
+        </div>
+      </div>
+
+      <div class="energy-card-body">
+        <form method="POST" action="{{ url_for('settings.settings_view') }}">
+          <input type="hidden" name="action" value="update_profile">
+
+          <div class="mb-3">
+            <label for="name" class="form-label fw-semibold small text-muted">Full Name</label>
+            <input type="text" class="form-control bg-light" id="name" name="name" value="{{ user.name }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label fw-semibold small text-muted">Email Address (Read Only)</label>
+            <input type="email" class="form-control bg-light" id="email" value="{{ user.email }}" readonly disabled>
+          </div>
+
+          <div class="row g-2 mb-4">
+            <div class="col-6">
+              <label for="currency" class="form-label fw-semibold small text-muted">Billing Currency</label>
+              <select class="form-select bg-light" id="currency" name="currency">
+                <option value="₹" {% if user.currency == '₹' %}selected{% endif %}>₹ (INR - Indian Rupee)</option>
+                <option value="$" {% if user.currency == '$' %}selected{% endif %}>$ (USD - US Dollar)</option>
+                <option value="€" {% if user.currency == '€' %}selected{% endif %}>€ (EUR - Euro)</option>
+                <option value="£" {% if user.currency == '£' %}selected{% endif %}>£ (GBP - British Pound)</option>
+              </select>
+            </div>
+
+            <div class="col-6">
+              <label for="default_tariff" class="form-label fw-semibold small text-muted">Default Tariff (per kWh)</label>
+              <div class="input-group">
+                <input type="number" step="0.1" min="0.5" class="form-control bg-light" id="default_tariff" name="default_tariff" value="{{ user.default_tariff }}" required>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary-custom w-100 py-2 justify-content-center">
+            <i class="bi bi-save me-1"></i> Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Alert Management -->
+    <div class="energy-card">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-bell-fill text-warning"></i>
+          Alerts & Notifications
+        </div>
+      </div>
+      <div class="energy-card-body">
+        <p class="small text-muted mb-3">
+          Energy alert triggers notify you when high consumption spikes or peak grid loads are detected.
+        </p>
+        <form method="POST" action="{{ url_for('settings.settings_view') }}">
+          <input type="hidden" name="action" value="clear_alerts">
+          <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Clear all alert notifications?');">
+            <i class="bi bi-trash me-1"></i> Clear All Alert History
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security / Password Change -->
+  <div class="col-lg-6">
+    <div class="energy-card">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-shield-lock-fill text-success"></i>
+          Security & Password
+        </div>
+      </div>
+
+      <div class="energy-card-body">
+        <form method="POST" action="{{ url_for('settings.settings_view') }}">
+          <input type="hidden" name="action" value="change_password">
+
+          <div class="mb-3">
+            <label for="current_password" class="form-label fw-semibold small text-muted">Current Password</label>
+            <input type="password" class="form-control bg-light" id="current_password" name="current_password" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="new_password" class="form-label fw-semibold small text-muted">New Password</label>
+            <input type="password" class="form-control bg-light" id="new_password" name="new_password" placeholder="Min 6 characters" required>
+          </div>
+
+          <div class="mb-4">
+            <label for="confirm_password" class="form-label fw-semibold small text-muted">Confirm New Password</label>
+            <input type="password" class="form-control bg-light" id="confirm_password" name="confirm_password" placeholder="Re-enter new password" required>
+          </div>
+
+          <button type="submit" class="btn btn-outline-success w-100 py-2 justify-content-center">
+            <i class="bi bi-key-fill me-1"></i> Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

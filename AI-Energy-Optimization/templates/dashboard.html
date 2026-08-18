@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Energy Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Real-time energy consumption overview & AI intelligence{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="card border-0 mb-4 rounded-4 shadow-sm text-white overflow-hidden" style="background: linear-gradient(135deg, #065f46, #0f172a);">
+  <div class="card-body p-4 position-relative">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill mb-2 fw-semibold">
+          <i class="bi bi-patch-check-fill me-1"></i> AI Energy Optimization Active
+        </span>
+        <h2 class="fw-bold mb-1">Welcome, {{ current_user.name }}! 👋</h2>
+        <p class="text-light opacity-75 mb-3">
+          Your residential smart meter data is synchronized with the Machine Learning model. Today's energy intensity is moderate with an estimated <strong>{{ savings_percentage }}% saving opportunity</strong> during evening off-peak hours.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('prediction.predict_view') }}" class="btn btn-success btn-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-cpu-fill me-1"></i> Run AI Prediction
+          </a>
+          <a href="{{ url_for('optimization.optimization_view') }}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+            <i class="bi bi-sliders me-1"></i> Energy Saving Simulator
+          </a>
+          <a href="{{ url_for('upload.upload_view') }}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Upload Dataset
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-4 text-center text-lg-end mt-3 mt-lg-0 d-none d-lg-block">
+        <div class="p-3 bg-white bg-opacity-10 rounded-4 d-inline-block text-start border border-white border-opacity-10">
+          <div class="text-light opacity-75 small">Active Tariff Plan</div>
+          <div class="fs-4 fw-bold">{{ global_currency }}{{ tariff }} <span class="fs-6 fw-normal opacity-75">/ kWh</span></div>
+          <div class="small text-success mt-1"><i class="bi bi-shield-check"></i> Standard Domestic Slab</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Metric Cards Grid -->
+<div class="row g-3 mb-4">
+  <!-- Today's Consumption -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card success">
+      <div>
+        <div class="kpi-label">Today's Consumption</div>
+        <div class="kpi-value">{{ today_kwh }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+        <div class="kpi-subtext">
+          <span class="text-muted">Cost: </span>
+          <strong class="text-dark">{{ global_currency }}{{ today_cost }}</strong>
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-green">
+        <i class="bi bi-lightning-charge-fill"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Consumption -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card info">
+      <div>
+        <div class="kpi-label">Monthly Consumption</div>
+        <div class="kpi-value">{{ monthly_kwh }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+        <div class="kpi-subtext text-info">
+          <i class="bi bi-calendar-check"></i> Est. Bill: <strong>{{ global_currency }}{{ monthly_cost }}</strong>
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-blue">
+        <i class="bi bi-speedometer2"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Predicted Next Month -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Predicted Next Month</div>
+        <div class="kpi-value">{{ predicted_next_month_kwh }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+        <div class="kpi-subtext text-primary">
+          <i class="bi bi-robot"></i> Next-Day: <strong>{{ predicted_next_day_kwh }} kWh</strong>
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-amber">
+        <i class="bi bi-graph-up-arrow"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Potential Savings -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="kpi-card warning">
+      <div>
+        <div class="kpi-label">Potential Monthly Saving</div>
+        <div class="kpi-value">{{ global_currency }}{{ potential_savings_cost }}</div>
+        <div class="kpi-subtext text-success">
+          <i class="bi bi-arrow-down-circle-fill"></i> <strong>{{ savings_percentage }}%</strong> reduction possible
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-rose">
+        <i class="bi bi-piggy-bank-fill"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Secondary Stats: Extreme Usage Days & Alerts -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6 col-lg-3">
+    <div class="energy-card mb-0 h-100 p-3 d-flex align-items-center gap-3">
+      <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-3 fs-4">
+        <i class="bi bi-arrow-up-circle-fill"></i>
+      </div>
+      <div>
+        <div class="small text-muted fw-semibold">Highest Consumption Day</div>
+        <div class="fw-bold fs-5 text-danger">{{ highest_day_kwh }} kWh</div>
+        <div class="small text-muted">{{ highest_day }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="energy-card mb-0 h-100 p-3 d-flex align-items-center gap-3">
+      <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 fs-4">
+        <i class="bi bi-arrow-down-circle-fill"></i>
+      </div>
+      <div>
+        <div class="small text-muted fw-semibold">Lowest Consumption Day</div>
+        <div class="fw-bold fs-5 text-success">{{ lowest_day_kwh }} kWh</div>
+        <div class="small text-muted">{{ lowest_day }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="energy-card mb-0 h-100 p-3 d-flex align-items-center gap-3">
+      <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 fs-4">
+        <i class="bi bi-calculator"></i>
+      </div>
+      <div>
+        <div class="small text-muted fw-semibold">Average Daily Consumption</div>
+        <div class="fw-bold fs-5">{{ avg_daily_kwh }} kWh/day</div>
+        <div class="small text-muted">~{{ global_currency }}{{ (avg_daily_kwh * tariff) | round(2) }}/day</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="energy-card mb-0 h-100 p-3 d-flex align-items-center gap-3">
+      <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 fs-4">
+        <i class="bi bi-clock-history"></i>
+      </div>
+      <div>
+        <div class="small text-muted fw-semibold">Peak Grid Window</div>
+        <div class="fw-bold fs-5 text-warning">18:00 - 22:00</div>
+        <div class="small text-muted">Evening Peak Load</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Visualizations Row -->
+<div class="row g-4 mb-4">
+  <!-- Daily Trend Line Chart -->
+  <div class="col-lg-8">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-activity text-success"></i>
+          Daily Energy Consumption Trend
+        </div>
+        <span class="badge bg-light text-dark border">Last 14 Days</span>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 280px;">
+          <canvas id="dailyTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appliance Breakdown Doughnut -->
+  <div class="col-lg-4">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-pie-chart-fill text-primary"></i>
+          Appliance Consumption
+        </div>
+        <span class="badge bg-light text-dark border">Share %</span>
+      </div>
+      <div class="energy-card-body d-flex align-items-center justify-content-center">
+        <div style="height: 280px; width: 100%;">
+          <canvas id="applianceDoughnutChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Secondary Charts & Alerts Row -->
+<div class="row g-4 mb-4">
+  <!-- Peak Usage Hours Bar Chart -->
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-bar-chart-steps text-info"></i>
+          24-Hour Peak Usage Load Profile
+        </div>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Peak: 6 PM - 10 PM</span>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 260px;">
+          <canvas id="peakHoursChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actual vs Predicted ML Comparison -->
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-diagram-3-fill text-primary"></i>
+          Actual vs Random Forest AI Prediction
+        </div>
+        <a href="{{ url_for('model_performance.model_performance_view') }}" class="small text-decoration-none text-success fw-semibold">
+          Model Metrics &rarr;
+        </a>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 260px;">
+          <canvas id="actualVsPredChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Alerts and Quick Logs -->
+<div class="row g-4">
+  <!-- Energy Alerts System -->
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-bell-fill text-warning"></i>
+          Smart Energy Alerts & Notifications
+        </div>
+        <span class="badge bg-primary-subtle text-primary">{{ alerts | length }} Notifications</span>
+      </div>
+      <div class="energy-card-body">
+        {% if alerts %}
+          {% for alert in alerts %}
+            <div class="alert-item {{ alert.alert_type }}">
+              <div class="fs-4">
+                {% if alert.alert_type == 'success' %}
+                  <i class="bi bi-check-circle-fill text-success"></i>
+                {% elif alert.alert_type == 'warning' %}
+                  <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                {% elif alert.alert_type == 'critical' or alert.alert_type == 'danger' %}
+                  <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+                {% else %}
+                  <i class="bi bi-info-circle-fill text-info"></i>
+                {% endif %}
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-bold small">{{ alert.title }}</div>
+                <div class="small opacity-75">{{ alert.message }}</div>
+                <div class="small text-muted mt-1" style="font-size: 0.7rem;">{{ alert.created_at.strftime('%b %d, %Y - %H:%M') }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-bell-slash fs-2 mb-2 d-block opacity-50"></i>
+            No active energy alerts. Your consumption is operating within standard parameters.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Prediction Logs -->
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-cpu text-success"></i>
+          Recent AI Predictions
+        </div>
+        <a href="{{ url_for('history.history_view', tab='predictions') }}" class="small text-decoration-none text-success fw-semibold">
+          View All &rarr;
+        </a>
+      </div>
+      <div class="energy-card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-custom mb-0">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Temp / Hum</th>
+                <th>Predicted</th>
+                <th>Est. Cost</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if recent_predictions %}
+                {% for p in recent_predictions %}
+                  <tr>
+                    <td>
+                      <div class="fw-semibold">{{ p.date }}</div>
+                      <div class="text-muted small">{{ p.time }}</div>
+                    </td>
+                    <td>{{ p.temperature }}°C / {{ p.humidity }}%</td>
+                    <td class="fw-bold text-success">{{ p.predicted_consumption }} kWh</td>
+                    <td>{{ global_currency }}{{ p.estimated_cost }}</td>
+                    <td>
+                      <span class="badge bg-{{ 'success' if p.category == 'Low' else ('primary' if p.category == 'Normal' else 'danger') }}-subtle text-{{ 'success' if p.category == 'Low' else ('primary' if p.category == 'Normal' else 'danger') }}">
+                        {{ p.category }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">
+                    No predictions recorded yet. 
+                    <a href="{{ url_for('prediction.predict_view') }}" class="text-success fw-semibold">Run your first prediction</a>!
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

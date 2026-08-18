@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}ML Model Performance & Explainability{% endblock %}
+{% block page_title %}ML Model Performance{% endblock %}
+{% block page_subtitle %}Model evaluation metrics, Random Forest vs Linear Regression benchmark, and feature importance{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Comparison Ribbon -->
+<div class="row g-3 mb-4">
+  <!-- Random Forest R² -->
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card success">
+      <div>
+        <div class="kpi-label">Random Forest R² Score</div>
+        <div class="kpi-value">{{ (rf.r2 * 100) | round(2) }}%</div>
+        <div class="kpi-subtext text-success">
+          <i class="bi bi-patch-check-fill"></i> Primary Regression Model
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-green"><i class="bi bi-tree-fill"></i></div>
+    </div>
+  </div>
+
+  <!-- Random Forest MAE -->
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card info">
+      <div>
+        <div class="kpi-label">Mean Absolute Error (MAE)</div>
+        <div class="kpi-value">{{ rf.mae }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+        <div class="kpi-subtext text-info">
+          <i class="bi bi-bullseye"></i> Avg deviation per prediction
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-blue"><i class="bi bi-graph-up"></i></div>
+    </div>
+  </div>
+
+  <!-- Random Forest RMSE -->
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Root Mean Squared Error</div>
+        <div class="kpi-value">{{ rf.rmse }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+        <div class="kpi-subtext text-muted">
+          <i class="bi bi-shield-check"></i> Low penalty on outliers
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-amber"><i class="bi bi-cpu"></i></div>
+    </div>
+  </div>
+
+  <!-- Linear Regression Baseline -->
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card warning">
+      <div>
+        <div class="kpi-label">Linear Regression Baseline R²</div>
+        <div class="kpi-value">{{ (lr.r2 * 100) | round(2) }}%</div>
+        <div class="kpi-subtext text-muted">
+          MAE: <strong>{{ lr.mae }} kWh</strong> (Benchmark)
+        </div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-rose"><i class="bi bi-bar-chart"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- Benchmark Comparison Table & Explanation -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-table text-primary"></i>
+          Algorithm Performance Benchmark
+        </div>
+        <span class="badge bg-light text-dark border">Test Dataset (20% Holdout)</span>
+      </div>
+
+      <div class="energy-card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-custom mb-0">
+            <thead>
+              <tr>
+                <th>Evaluation Metric</th>
+                <th>Random Forest Regressor</th>
+                <th>Linear Regression</th>
+                <th>Improvement</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold">R² Score (Variance Explained)</td>
+                <td><span class="badge bg-success-subtle text-success fw-bold">{{ (rf.r2 * 100) | round(2) }}% ({{ rf.r2 }})</span></td>
+                <td><span class="badge bg-secondary-subtle text-secondary">{{ (lr.r2 * 100) | round(2) }}% ({{ lr.r2 }})</span></td>
+                <td class="text-success fw-bold">+{{ ((rf.r2 - lr.r2) * 100) | round(2) }}%</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Mean Absolute Error (MAE)</td>
+                <td class="fw-bold text-success">{{ rf.mae }} kWh</td>
+                <td class="text-muted">{{ lr.mae }} kWh</td>
+                <td class="text-success fw-bold">-{{ ((lr.mae - rf.mae) / lr.mae * 100) | round(1) }}% error</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Mean Squared Error (MSE)</td>
+                <td class="fw-bold text-success">{{ rf.mse }}</td>
+                <td class="text-muted">{{ lr.mse }}</td>
+                <td class="text-success fw-bold">-{{ ((lr.mse - rf.mse) / lr.mse * 100) | round(1) }}%</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Root Mean Squared Error (RMSE)</td>
+                <td class="fw-bold text-success">{{ rf.rmse }} kWh</td>
+                <td class="text-muted">{{ lr.rmse }} kWh</td>
+                <td class="text-success fw-bold">-{{ ((lr.rmse - rf.rmse) / lr.rmse * 100) | round(1) }}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Model Architecture & Training Summary -->
+  <div class="col-lg-5">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-info-circle-fill text-info"></i>
+          Training Metadata
+        </div>
+        <span class="badge bg-light text-dark border">Scikit-Learn</span>
+      </div>
+
+      <div class="energy-card-body">
+        <ul class="list-group list-group-flush small">
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Total Dataset Samples</span>
+            <strong>{{ total_samples }} records</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Training Split (80%)</span>
+            <strong>{{ train_samples }} samples</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Testing Holdout (20%)</span>
+            <strong>{{ test_samples }} samples</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Number of Estimators</span>
+            <strong>100 Decision Trees</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Max Tree Depth</span>
+            <strong>14 levels</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Last Model Trained</span>
+            <strong>{{ trained_at }}</strong>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row: Feature Importance & Actual vs Predicted -->
+<div class="row g-4 mb-4">
+  <!-- Feature Importance Explainability Bar Chart -->
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-bar-chart-fill text-success"></i>
+          Feature Importance (Model Explainability)
+        </div>
+        <span class="badge bg-success-subtle text-success">Relative Weight %</span>
+      </div>
+      <div class="energy-card-body">
+        <p class="small text-muted mb-2">
+          Shows which environmental and usage variables have the greatest mathematical influence on the Random Forest ensemble predictions:
+        </p>
+        <div style="height: 300px;">
+          <canvas id="featureImportanceChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actual vs Predicted Test Set Line Chart -->
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-graph-up-arrow text-primary"></i>
+          Actual vs Predicted (Holdout Test Samples)
+        </div>
+        <span class="badge bg-light text-dark border">30 Sample Test Points</span>
+      </div>
+      <div class="energy-card-body">
+        <p class="small text-muted mb-2">
+          Visual comparison showing how closely the Random Forest predictions track actual ground-truth electricity consumption:
+        </p>
+        <div style="height: 300px;">
+          <canvas id="modelComparisonChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Viva Academic Explanation Cards -->
+<div class="card border-0 bg-light rounded-4 p-4 shadow-sm">
+  <h5 class="fw-bold text-dark mb-3"><i class="bi bi-mortarboard-fill text-success me-2"></i> Viva Cheat Sheet: Key ML Concepts in this Project</h5>
+  <div class="row g-3 small text-muted">
+    <div class="col-md-4">
+      <div class="p-3 bg-white rounded-3 border h-100">
+        <strong class="text-dark d-block mb-1">Why Random Forest?</strong>
+        Random Forest is an ensemble learning method that builds 100 decision trees and averages their predictions. It easily models non-linear relationships (e.g. exponential AC cooling demand above 28°C) and prevents overfitting through bootstrap aggregation (bagging).
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 bg-white rounded-3 border h-100">
+        <strong class="text-dark d-block mb-1">What does R² Score mean?</strong>
+        The Coefficient of Determination (\(R^2\)) measures the proportion of variance in energy consumption explained by the features. Our \(R^2 = {{ (rf.r2 * 100) | round(1) }}\%\) indicates superior predictive precision.
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 bg-white rounded-3 border h-100">
+        <strong class="text-dark d-block mb-1">What is MAE vs RMSE?</strong>
+        MAE (Mean Absolute Error) is the average absolute difference between predicted and actual values. RMSE penalizes larger prediction errors more heavily by squaring deviations before taking the root.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const res = await fetch("/api/model-performance-data");
+    const data = await res.json();
+
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const textColor = isDark ? "#9ca3af" : "#64748b";
+    const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+
+    // 1. Feature Importance Horizontal Bar Chart
+    const featCanvas = document.getElementById("featureImportanceChart");
+    if (featCanvas) {
+      new Chart(featCanvas, {
+        type: "bar",
+        data: {
+          labels: data.feature_importance.labels,
+          datasets: [{
+            label: "Importance (%)",
+            data: data.feature_importance.values,
+            backgroundColor: "#10b981",
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: textColor }, title: { display: true, text: "Importance (%)", color: textColor } },
+            y: { grid: { display: false }, ticks: { color: textColor } }
+          }
+        }
+      });
+    }
+
+    // 2. Comparison Line Chart
+    const compCanvas = document.getElementById("modelComparisonChart");
+    if (compCanvas) {
+      new Chart(compCanvas, {
+        type: "line",
+        data: {
+          labels: data.comparison.labels,
+          datasets: [
+            {
+              label: "Actual (kWh)",
+              data: data.comparison.actual,
+              borderColor: "#0f172a",
+              borderWidth: 2,
+              tension: 0.2,
+              pointRadius: 3
+            },
+            {
+              label: "Random Forest (kWh)",
+              data: data.comparison.random_forest,
+              borderColor: "#10b981",
+              borderWidth: 2,
+              borderDash: [4, 4],
+              tension: 0.2,
+              pointRadius: 3
+            },
+            {
+              label: "Linear Regression (kWh)",
+              data: data.comparison.linear_regression,
+              borderColor: "#f59e0b",
+              borderWidth: 1.5,
+              borderDash: [2, 2],
+              tension: 0.2,
+              pointRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "top", labels: { color: textColor } } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 45, autoSkip: true, maxTicksLimit: 10 } },
+            y: { grid: { color: gridColor }, ticks: { color: textColor }, title: { display: true, text: "kWh", color: textColor } }
+          }
+        }
+      });
+    }
+
+  } catch (err) {
+    console.error("Model performance chart error:", err);
+  }
+});
+</script>
+{% endblock %}

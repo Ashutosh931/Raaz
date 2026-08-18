@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Visual Analytics & Energy Trends{% endblock %}
+{% block page_title %}Visual Analytics{% endblock %}
+{% block page_subtitle %}In-depth historical electricity patterns, weekday loads, and weather correlation{% endblock %}
+
+{% block content %}
+<!-- Analytics Summary Ribbon -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card success">
+      <div>
+        <div class="kpi-label">Analyzed Records</div>
+        <div class="kpi-value">{{ record_count }} <span class="fs-6 fw-normal text-muted">Rows</span></div>
+        <div class="kpi-subtext text-success"><i class="bi bi-database-check"></i> Cleaned & Verified</div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-green"><i class="bi bi-file-earmark-bar-graph"></i></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card info">
+      <div>
+        <div class="kpi-label">Total Consumption</div>
+        <div class="kpi-value">{{ total_kwh }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+        <div class="kpi-subtext text-info"><i class="bi bi-cash-stack"></i> {{ global_currency }}{{ (total_kwh * tariff) | round(2) }} Total</div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-blue"><i class="bi bi-lightning-charge"></i></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Peak Observed Spike</div>
+        <div class="kpi-value">{{ max_kwh }} <span class="fs-6 fw-normal text-muted">kWh</span></div>
+        <div class="kpi-subtext text-danger"><i class="bi bi-arrow-up-right"></i> Max Peak Demand</div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-rose"><i class="bi bi-graph-up"></i></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="kpi-card warning">
+      <div>
+        <div class="kpi-label">Average Temperature</div>
+        <div class="kpi-value">{{ avg_temp }}°C</div>
+        <div class="kpi-subtext text-muted"><i class="bi bi-thermometer-sun"></i> Ambient Average</div>
+      </div>
+      <div class="kpi-icon-box kpi-icon-amber"><i class="bi bi-sun-fill"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart Grid Row 1: Timeline Trend & Weekly Breakdown -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-graph-up text-primary"></i>
+          Electricity Consumption Trend Over Time
+        </div>
+        <span class="badge bg-light text-dark border">Timeline</span>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 300px;">
+          <canvas id="analyticsTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-calendar-week text-success"></i>
+          Weekly Analysis (Mon - Sun)
+        </div>
+        <span class="badge bg-light text-dark border">Day of Week</span>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 300px;">
+          <canvas id="analyticsWeeklyChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart Grid Row 2: Peak Hours & Monthly Comparison -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-clock-history text-danger"></i>
+          Diurnal Peak Usage Hours Profile (00:00 - 23:00)
+        </div>
+        <span class="badge bg-danger-subtle text-danger">Red = Peak 18:00-22:00</span>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 280px;">
+          <canvas id="analyticsPeakChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-calendar3 text-info"></i>
+          Monthly Aggregated Energy Usage
+        </div>
+        <span class="badge bg-light text-dark border">Monthly Trend</span>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 280px;">
+          <canvas id="analyticsMonthlyChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart Grid Row 3: Scatter Weather Correlation & Appliance Share -->
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-scatter-chart text-danger"></i>
+          Temperature vs Electricity Consumption (Thermal Sensitivity)
+        </div>
+        <span class="badge bg-light text-dark border">Scatter Plot</span>
+      </div>
+      <div class="energy-card-body">
+        <div style="height: 280px;">
+          <canvas id="analyticsScatterChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="energy-card h-100">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-pie-chart text-warning"></i>
+          Appliance Category Share
+        </div>
+        <span class="badge bg-light text-dark border">Contribution %</span>
+      </div>
+      <div class="energy-card-body d-flex align-items-center justify-content-center">
+        <div style="height: 280px; width: 100%;">
+          <canvas id="analyticsApplianceChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

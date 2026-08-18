@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}About Project - AI Smart Energy Optimizer{% endblock %}
+{% block page_title %}About Project{% endblock %}
+{% block page_subtitle %}Academic project specifications, system architecture, and viva demonstration guide{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Main Project Overview -->
+  <div class="col-lg-8">
+    <div class="energy-card mb-4">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-file-earmark-text-fill text-success"></i>
+          Project Abstract & Objectives
+        </div>
+        <span class="badge bg-success-subtle text-success">Final Year Project 2026</span>
+      </div>
+
+      <div class="energy-card-body">
+        <h5 class="fw-bold text-dark mb-2">AI-Based Smart Energy Consumption Prediction and Optimization System</h5>
+        <p class="text-muted small leading-relaxed mb-4">
+          Unmonitored electricity usage and inefficient appliance scheduling contribute significantly to high utility bills and peak electrical grid strain. This project presents an intelligent full-stack system that leverages Machine Learning (Random Forest Regression) to accurately predict future residential energy consumption, identify peak-demand hours, calculate electrical bills with tiered domestic tariffs, and dynamically deliver personalized, context-aware energy conservation recommendations.
+        </p>
+
+        <h6 class="fw-bold small text-dark mb-2"><i class="bi bi-bullseye text-danger me-1"></i> Core Objectives:</h6>
+        <ul class="text-muted small ps-3 mb-4">
+          <li><strong>Accurate Consumption Forecasting:</strong> Predict hourly and daily electricity usage based on weather, occupancy, time of day, and historical lag features with over 95% \(R^2\) precision.</li>
+          <li><strong>Peak Load Identification:</strong> Automatically detect high-demand evening windows (18:00–22:00) to incentivize load shifting away from grid stress periods.</li>
+          <li><strong>Explainable AI Intelligence:</strong> Quantify feature contributions (temperature, previous consumption, appliances) to explain model decisions transparently during college viva examinations.</li>
+          <li><strong>Actionable Optimization & Simulation:</strong> Provide a dynamic recommendation engine and interactive saving simulator for tangible monetary and carbon reductions.</li>
+        </ul>
+
+        <h6 class="fw-bold small text-dark mb-2"><i class="bi bi-diagram-3 text-primary me-1"></i> System Architecture Flow:</h6>
+        <div class="p-3 bg-light rounded-3 border text-center font-monospace small mb-4">
+          <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+            <span class="p-2 bg-white rounded border fw-bold text-dark">User Input / Smart Meter CSV</span>
+            <span>&rarr;</span>
+            <span class="p-2 bg-white rounded border fw-bold text-primary">Flask Web Interface</span>
+            <span>&rarr;</span>
+            <span class="p-2 bg-white rounded border fw-bold text-info">Data Cleansing & Lag Extraction</span>
+            <span>&rarr;</span>
+            <span class="p-2 bg-white rounded border fw-bold text-success">Random Forest ML Regressor</span>
+            <span>&rarr;</span>
+            <span class="p-2 bg-white rounded border fw-bold text-warning">SQLite Database</span>
+            <span>&rarr;</span>
+            <span class="p-2 bg-success text-white rounded fw-bold">Live Dashboard & Savings</span>
+          </div>
+        </div>
+
+        <h6 class="fw-bold small text-dark mb-2"><i class="bi bi-stack text-info me-1"></i> Technology Stack:</h6>
+        <div class="row g-2 text-center small">
+          <div class="col-6 col-sm-4">
+            <div class="p-2 bg-light rounded border">
+              <strong>Python 3.11+</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">Backend Engine</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-4">
+            <div class="p-2 bg-light rounded border">
+              <strong>Flask</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">Web Framework & Routing</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-4">
+            <div class="p-2 bg-light rounded border">
+              <strong>Scikit-Learn</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">Random Forest & Linear Reg.</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-4">
+            <div class="p-2 bg-light rounded border">
+              <strong>SQLite + SQLAlchemy</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">Database & ORM</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-4">
+            <div class="p-2 bg-light rounded border">
+              <strong>Bootstrap 5 + CSS3</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">Responsive UI Design</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-4">
+            <div class="p-2 bg-light rounded border">
+              <strong>Chart.js</strong>
+              <div class="text-muted" style="font-size: 0.75rem;">Interactive Visualizations</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Viva Demonstration & Project Details Sidebar -->
+  <div class="col-lg-4">
+    <div class="energy-card mb-4">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-person-badge-fill text-primary"></i>
+          Project Details
+        </div>
+      </div>
+      <div class="energy-card-body small">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Project Domain:</span>
+            <strong>Machine Learning & Green Tech</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Primary Algorithm:</span>
+            <strong class="text-success">Random Forest Regressor</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Comparison Model:</span>
+            <strong>Linear Regression Baseline</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Model Accuracy (\(R^2\)):</span>
+            <strong class="text-success">~98.0%</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Training Samples:</span>
+            <strong>4,320 Records (6 Months)</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-transparent px-0">
+            <span class="text-muted">Default Tariff:</span>
+            <strong>₹8.00 / kWh</strong>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="energy-card">
+      <div class="energy-card-header bg-dark text-white rounded-top-4" style="background: linear-gradient(135deg, #0f172a, #1e293b) !important;">
+        <div class="energy-card-title text-white">
+          <i class="bi bi-mortarboard-fill text-warning"></i>
+          Viva Quick Checklist
+        </div>
+      </div>
+      <div class="energy-card-body small text-muted">
+        <div class="mb-3">
+          <strong class="text-dark d-block">1. Why not Deep Learning / LSTM?</strong>
+          Random Forest provides superior interpretability through feature importance, requires no GPU hardware, trains in seconds, and resists overfitting on tabular residential energy data.
+        </div>
+        <div class="mb-3">
+          <strong class="text-dark d-block">2. How is cost calculated?</strong>
+          Calculated using both flat rate (\(\text{kWh} \times \text{Tariff}\)) and progressive utility tiered slabs (Tier 1 Lifeline, Tier 2 Normal, Tier 3 Surcharge).
+        </div>
+        <div>
+          <strong class="text-dark d-block">3. Full Viva Documentation:</strong>
+          Check the <code>docs/viva_questions.md</code> file in the project directory for 30+ in-depth viva Q&As!
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

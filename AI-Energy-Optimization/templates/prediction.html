@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Predict Energy Consumption{% endblock %}
+{% block page_title %}Predict Energy Consumption{% endblock %}
+{% block page_subtitle %}Real-time Machine Learning inference with Random Forest Regressor{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Input Form Column -->
+  <div class="col-lg-6">
+    <div class="energy-card">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-cpu-fill text-success"></i>
+          Energy Consumption Prediction Model
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">Trained Model Ready</span>
+      </div>
+
+      <div class="energy-card-body">
+        <p class="text-muted small mb-4">
+          Provide ambient environmental and household parameters below. The system will run inference through the trained <strong>Random Forest Regression</strong> pipeline to project electricity demand and calculate cost.
+        </p>
+
+        <form method="POST" action="{{ url_for('prediction.predict_view') }}">
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label for="date" class="form-label fw-semibold small text-muted">Date</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar3 text-muted"></i></span>
+                <input type="date" class="form-control bg-light border-start-0" id="date" name="date" value="{{ form.date if form else '' }}" required>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label for="time" class="form-label fw-semibold small text-muted">Time of Day</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-clock text-muted"></i></span>
+                <input type="time" class="form-control bg-light border-start-0" id="time" name="time" value="{{ form.time if form else '' }}" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label for="temperature" class="form-label fw-semibold small text-muted">Ambient Temperature (°C)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-thermometer-half text-danger"></i></span>
+                <input type="number" step="0.1" min="-10" max="55" class="form-control bg-light border-start-0" id="temperature" name="temperature" value="{{ form.temperature if form else '30.5' }}" required>
+              </div>
+              <div class="form-text small">Typical range: 15°C to 42°C</div>
+            </div>
+
+            <div class="col-sm-6">
+              <label for="humidity" class="form-label fw-semibold small text-muted">Relative Humidity (%)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-droplet-half text-info"></i></span>
+                <input type="number" step="0.1" min="10" max="100" class="form-control bg-light border-start-0" id="humidity" name="humidity" value="{{ form.humidity if form else '62.0' }}" required>
+              </div>
+              <div class="form-text small">Typical range: 30% to 85%</div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label for="people" class="form-label fw-semibold small text-muted">Number of Occupants (People)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-people-fill text-muted"></i></span>
+                <input type="number" min="1" max="20" class="form-control bg-light border-start-0" id="people" name="people" value="{{ form.people if form else '3' }}" required>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label for="appliance_usage" class="form-label fw-semibold small text-muted">Appliance Usage Intensity</label>
+              <select class="form-select bg-light" id="appliance_usage" name="appliance_usage" required>
+                <option value="Low" {% if form and form.appliance_usage == 'Low' %}selected{% endif %}>Low (Basic lighting & fridge)</option>
+                <option value="Medium" {% if form and (form.appliance_usage == 'Medium' or not form.appliance_usage) %}selected{% endif %}>Medium (Fan, TV, moderate AC)</option>
+                <option value="High" {% if form and form.appliance_usage == 'High' %}selected{% endif %}>High (AC, geyser, laundry active)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="previous_consumption" class="form-label fw-semibold small text-muted">Previous Hour Consumption (kWh)</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-lightning text-warning"></i></span>
+              <input type="number" step="0.01" min="0.1" max="30" class="form-control bg-light border-start-0" id="previous_consumption" name="previous_consumption" value="{{ form.previous_consumption if form else '4.2' }}" required>
+              <span class="input-group-text bg-light border-start-0">kWh</span>
+            </div>
+            <div class="form-text small">Autoregressive lag feature used by the ML model.</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary-custom w-100 py-3 justify-content-center fs-6">
+            <i class="bi bi-magic me-2"></i> Predict Energy Consumption
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prediction Result & Recommendations Column -->
+  <div class="col-lg-6">
+    {% if result %}
+      <!-- Output Result Card -->
+      <div class="energy-card mb-4">
+        <div class="energy-card-header">
+          <div class="energy-card-title">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            AI Prediction Outcome
+          </div>
+          <span class="badge bg-{{ result.category_color }}-subtle text-{{ result.category_color }} border border-{{ result.category_color }}-subtle px-3 py-1 rounded-pill fw-semibold">
+            {{ result.category_badge }}
+          </span>
+        </div>
+
+        <div class="energy-card-body">
+          <div class="prediction-result-banner mb-4">
+            <div class="text-muted small fw-semibold text-uppercase letter-spacing">Predicted Energy Demand</div>
+            <div class="prediction-kwh-display">{{ result.predicted_kwh }} <span class="fs-4 fw-normal text-muted">kWh</span></div>
+            <p class="text-muted small mb-0">{{ result.category_description }}</p>
+          </div>
+
+          <!-- Financial Cost Projections -->
+          <div class="row g-2 mb-4 text-center">
+            <div class="col-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted">Hourly Cost</div>
+                <div class="fs-5 fw-bold text-dark">{{ result.currency }}{{ result.estimated_cost }}</div>
+                <div class="small text-muted" style="font-size: 0.7rem;">@ {{ result.currency }}{{ result.tariff }}/kWh</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted">Est. Daily</div>
+                <div class="fs-5 fw-bold text-primary">{{ result.currency }}{{ result.est_daily_cost }}</div>
+                <div class="small text-muted" style="font-size: 0.7rem;">{{ result.est_daily_kwh }} kWh</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted">Est. Monthly</div>
+                <div class="fs-5 fw-bold text-success">{{ result.currency }}{{ result.est_monthly_cost }}</div>
+                <div class="small text-muted" style="font-size: 0.7rem;">{{ result.est_monthly_kwh }} kWh</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('optimization.optimization_view') }}" class="btn btn-outline-success btn-sm w-50 py-2">
+              <i class="bi bi-sliders me-1"></i> Open Simulator
+            </a>
+            <a href="{{ url_for('history.history_view', tab='predictions') }}" class="btn btn-outline-secondary btn-sm w-50 py-2">
+              <i class="bi bi-clock-history me-1"></i> View Saved Logs
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Recommendations for this prediction -->
+      <div class="energy-card">
+        <div class="energy-card-header">
+          <div class="energy-card-title">
+            <i class="bi bi-lightbulb-fill text-warning"></i>
+            Contextual Optimization Suggestions
+          </div>
+          <span class="badge bg-light text-dark border">Tailored to Conditions</span>
+        </div>
+        <div class="energy-card-body">
+          {% for rec in result.recommendations %}
+            <div class="recommendation-item {{ 'danger-border' if rec.impact == 'High' else ('warning-border' if rec.impact == 'Medium' else '') }}">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="fw-bold small text-dark d-flex align-items-center gap-2">
+                  <i class="bi {{ rec.icon }} text-{{ rec.badge_color }}"></i>
+                  {{ rec.title }}
+                </div>
+                <span class="badge bg-{{ rec.badge_color }}-subtle text-{{ rec.badge_color }}">{{ rec.category }}</span>
+              </div>
+              <p class="small text-muted mb-2">{{ rec.description }}</p>
+              <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                <span class="small fw-semibold text-success">
+                  <i class="bi bi-piggy-bank"></i> Save up to {{ rec.currency }}{{ rec.money_saved_monthly }}/mo
+                </span>
+                <span class="badge bg-light text-dark border small">{{ rec.kwh_saved_monthly }} kWh/mo</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    {% else %}
+      <!-- Placeholder Guide before Prediction is executed -->
+      <div class="energy-card h-100 d-flex flex-column justify-content-center text-center p-5">
+        <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 32px;">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Ready for AI Inference</h4>
+        <p class="text-muted small mx-auto" style="max-width: 380px;">
+          Fill out the form on the left with weather, time, occupancy, and appliance load to obtain real-time ML electricity consumption predictions, cost estimates, and personalized savings recommendations.
+        </p>
+        <div class="mt-4 p-3 bg-light rounded-3 text-start border d-inline-block mx-auto" style="max-width: 400px;">
+          <div class="fw-bold small mb-2 text-dark"><i class="bi bi-info-circle text-primary me-1"></i> ML Model Highlights:</div>
+          <ul class="small text-muted mb-0 ps-3">
+            <li>Algorithm: <strong>Random Forest Regressor (100 Trees)</strong></li>
+            <li>Evaluation Accuracy: <strong>98.0% R² Score</strong></li>
+            <li>Feature Interactions: Thermal load + Occupancy + Lag</li>
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

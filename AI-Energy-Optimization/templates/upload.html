@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Dataset - Smart Energy AI{% endblock %}
+{% block page_title %}Upload Energy Dataset{% endblock %}
+{% block page_subtitle %}Import custom CSV records for validation, data cleansing, and AI model ingestion{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Upload Box -->
+  <div class="col-lg-5">
+    <div class="energy-card">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-cloud-arrow-up-fill text-primary"></i>
+          Import CSV File
+        </div>
+        <span class="badge bg-light text-dark border">.CSV Only</span>
+      </div>
+
+      <div class="energy-card-body">
+        <form method="POST" action="{{ url_for('upload.upload_view') }}" enctype="multipart/form-data">
+          <div class="p-4 border border-2 border-dashed rounded-4 text-center bg-light mb-3">
+            <i class="bi bi-file-earmark-spreadsheet-fill fs-1 text-success mb-2 d-block"></i>
+            <h6 class="fw-bold mb-1">Select or Drag & Drop CSV</h6>
+            <p class="text-muted small mb-3">Files up to 16MB supported</p>
+            <input type="file" class="form-control" name="file" accept=".csv" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary-custom w-100 py-2 justify-content-center mb-3">
+            <i class="bi bi-check-circle me-1"></i> Upload & Process Dataset
+          </button>
+
+          <a href="{{ url_for('upload.download_sample_csv') }}" class="btn btn-outline-custom w-100 py-2 justify-content-center text-decoration-none">
+            <i class="bi bi-download me-1"></i> Download Sample CSV Template
+          </a>
+        </form>
+
+        <div class="mt-4 pt-3 border-top">
+          <h6 class="fw-bold small text-dark mb-2"><i class="bi bi-info-circle text-primary me-1"></i> Supported Column Schema:</h6>
+          <p class="text-muted small mb-2">The system automatically detects, standardizes, and imputes missing fields:</p>
+          <div class="d-flex flex-wrap gap-1">
+            <span class="badge bg-secondary-subtle text-secondary">date</span>
+            <span class="badge bg-secondary-subtle text-secondary">time</span>
+            <span class="badge bg-secondary-subtle text-secondary">temperature</span>
+            <span class="badge bg-secondary-subtle text-secondary">humidity</span>
+            <span class="badge bg-secondary-subtle text-secondary">number_of_people</span>
+            <span class="badge bg-secondary-subtle text-secondary">appliance_usage</span>
+            <span class="badge bg-secondary-subtle text-secondary">previous_consumption</span>
+            <span class="badge bg-secondary-subtle text-secondary">energy_consumption</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validation Results & Preview Table -->
+  <div class="col-lg-7">
+    {% if stats %}
+      <div class="energy-card mb-4">
+        <div class="energy-card-header">
+          <div class="energy-card-title">
+            <i class="bi bi-check2-all text-success"></i>
+            Data Cleaning & Summary Statistics
+          </div>
+          <span class="badge bg-success-subtle text-success">{{ stats.total_rows }} Records Processed</span>
+        </div>
+
+        <div class="energy-card-body">
+          <div class="row g-3 text-center mb-3">
+            <div class="col-sm-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted">Total Energy Ingested</div>
+                <div class="fs-5 fw-bold text-success">{{ stats.total_energy }} kWh</div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted">Average Hourly Usage</div>
+                <div class="fs-5 fw-bold text-primary">{{ stats.avg_energy }} kWh</div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <div class="small text-muted">Missing Values Imputed</div>
+                <div class="fs-5 fw-bold text-warning">{{ stats.missing_values_imputed }}</div>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="fw-bold small text-dark mb-2">First 10 Cleaned Records Preview:</h6>
+          <div class="table-responsive border rounded-3">
+            <table class="table table-sm table-hover mb-0 text-nowrap small">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Temp</th>
+                  <th>Humidity</th>
+                  <th>People</th>
+                  <th>Energy (kWh)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in rows %}
+                  <tr>
+                    <td>{{ r.date or 'N/A' }}</td>
+                    <td>{{ r.time or (r.hour ~ ':00') }}</td>
+                    <td>{{ r.temperature }}°C</td>
+                    <td>{{ r.humidity }}%</td>
+                    <td>{{ r.number_of_people }}</td>
+                    <td class="fw-bold text-success">{{ r.energy_consumption }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="energy-card h-100 d-flex flex-column justify-content-center text-center p-5">
+        <i class="bi bi-file-earmark-check fs-1 text-muted opacity-50 mb-3"></i>
+        <h5 class="fw-bold mb-2">No Dataset Uploaded Yet</h5>
+        <p class="text-muted small mx-auto" style="max-width: 400px;">
+          Upload your residential smart meter CSV file to automatically inspect data quality, impute missing values, and sync the records with the ML prediction pipeline and analytics dashboard.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

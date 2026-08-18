@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Consumption History & Prediction Logs{% endblock %}
+{% block page_title %}Consumption History{% endblock %}
+{% block page_subtitle %}Comprehensive audit trail of historical energy records and AI predictions{% endblock %}
+
+{% block content %}
+<div class="energy-card">
+  <div class="energy-card-header flex-wrap gap-2">
+    <ul class="nav nav-pills card-header-pills" id="historyTabs" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link {% if tab == 'records' or not tab %}active{% endif %} rounded-pill fw-semibold" href="{{ url_for('history.history_view', tab='records') }}">
+          <i class="bi bi-database me-1"></i> Energy Records ({{ total_records }})
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if tab == 'predictions' %}active{% endif %} rounded-pill fw-semibold" href="{{ url_for('history.history_view', tab='predictions') }}">
+          <i class="bi bi-cpu me-1"></i> AI Predictions ({{ total_predictions }})
+        </a>
+      </li>
+    </ul>
+
+    <div>
+      <a href="{{ url_for('history.export_csv') }}" class="btn btn-outline-success btn-sm rounded-pill">
+        <i class="bi bi-download me-1"></i> Export Records to CSV
+      </a>
+    </div>
+  </div>
+
+  <div class="energy-card-body p-0">
+    {% if tab == 'predictions' %}
+      <!-- AI Predictions Tab -->
+      <div class="table-responsive">
+        <table class="table table-custom mb-0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date & Time</th>
+              <th>Temp / Humidity</th>
+              <th>Occupants</th>
+              <th>Appliance</th>
+              <th>Prev. kWh</th>
+              <th>Predicted (kWh)</th>
+              <th>Est. Cost</th>
+              <th>Category</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if predictions %}
+              {% for p in predictions %}
+                <tr>
+                  <td class="text-muted">#{{ p.id }}</td>
+                  <td>
+                    <div class="fw-semibold">{{ p.date }}</div>
+                    <div class="small text-muted">{{ p.time }}</div>
+                  </td>
+                  <td>{{ p.temperature }}°C / {{ p.humidity }}%</td>
+                  <td>{{ p.people }}</td>
+                  <td><span class="badge bg-light text-dark border">{{ p.appliance_usage }}</span></td>
+                  <td>{{ p.previous_consumption }}</td>
+                  <td class="fw-bold text-success">{{ p.predicted_consumption }} kWh</td>
+                  <td class="fw-semibold">{{ global_currency }}{{ p.estimated_cost }}</td>
+                  <td>
+                    <span class="badge bg-{{ 'success' if p.category == 'Low' else ('primary' if p.category == 'Normal' else 'danger') }}-subtle text-{{ 'success' if p.category == 'Low' else ('primary' if p.category == 'Normal' else 'danger') }}">
+                      {{ p.category }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <form method="POST" action="{{ url_for('history.delete_prediction', pred_id=p.id) }}" onsubmit="return confirm('Delete this prediction record?');" style="display:inline;">
+                      <button type="submit" class="btn btn-outline-danger btn-sm p-1 px-2 border-0" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="10" class="text-center py-5 text-muted">
+                  <i class="bi bi-cpu fs-1 opacity-50 mb-2 d-block"></i>
+                  No prediction logs found. Run a prediction to see it stored here.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination for Predictions -->
+      {% if predictions_pagination and predictions_pagination.pages > 1 %}
+        <div class="p-3 border-top d-flex justify-content-center">
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if predictions_pagination.has_prev %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('history.history_view', tab='predictions', page=predictions_pagination.prev_num) }}">&laquo; Prev</a></li>
+              {% endif %}
+              <li class="page-item disabled"><span class="page-link">Page {{ predictions_pagination.page }} of {{ predictions_pagination.pages }}</span></li>
+              {% if predictions_pagination.has_next %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('history.history_view', tab='predictions', page=predictions_pagination.next_num) }}">Next &raquo;</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+      {% endif %}
+
+    {% else %}
+      <!-- Energy Records Tab -->
+      <div class="table-responsive">
+        <table class="table table-custom mb-0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Time (Hour)</th>
+              <th>Energy (kWh)</th>
+              <th>Cost</th>
+              <th>Temp</th>
+              <th>Occupants</th>
+              <th>Appliance</th>
+              <th>Source</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if records %}
+              {% for r in records %}
+                <tr>
+                  <td class="text-muted">#{{ r.id }}</td>
+                  <td class="fw-semibold">{{ r.date }}</td>
+                  <td>{{ r.time or (r.hour ~ ':00') }}</td>
+                  <td class="fw-bold text-success">{{ r.consumption }} kWh</td>
+                  <td>{{ global_currency }}{{ r.cost }}</td>
+                  <td>{{ r.temperature }}°C</td>
+                  <td>{{ r.people }}</td>
+                  <td><span class="badge bg-light text-dark border">{{ r.appliance }}</span></td>
+                  <td><span class="badge bg-secondary-subtle text-secondary">{{ r.source }}</span></td>
+                  <td class="text-end">
+                    <form method="POST" action="{{ url_for('history.delete_record', record_id=r.id) }}" onsubmit="return confirm('Delete this record?');" style="display:inline;">
+                      <button type="submit" class="btn btn-outline-danger btn-sm p-1 px-2 border-0" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="10" class="text-center py-5 text-muted">
+                  <i class="bi bi-database-slash fs-1 opacity-50 mb-2 d-block"></i>
+                  No energy consumption records recorded.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination for Records -->
+      {% if records_pagination and records_pagination.pages > 1 %}
+        <div class="p-3 border-top d-flex justify-content-center">
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if records_pagination.has_prev %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('history.history_view', tab='records', page=records_pagination.prev_num) }}">&laquo; Prev</a></li>
+              {% endif %}
+              <li class="page-item disabled"><span class="page-link">Page {{ records_pagination.page }} of {{ records_pagination.pages }}</span></li>
+              {% if records_pagination.has_next %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('history.history_view', tab='records', page=records_pagination.next_num) }}">Next &raquo;</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+      {% endif %}
+
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

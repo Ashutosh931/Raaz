@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Energy Optimization & Saving Simulator{% endblock %}
+{% block page_title %}Energy Optimization & Simulator{% endblock %}
+{% block page_subtitle %}Personalized AI conservation strategies and real-time interactive saving simulator{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Left Column: Dynamic Recommendations Feed -->
+  <div class="col-lg-6">
+    <div class="energy-card">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-lightbulb-fill text-warning"></i>
+          Personalized Conservation Recommendations
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">AI Optimized</span>
+      </div>
+
+      <div class="energy-card-body">
+        <p class="text-muted small mb-3">
+          Our rule-based intelligence engine analyzes your household's peak hours, ambient weather, and appliance intensity to generate actionable steps for reducing your utility bills.
+        </p>
+
+        {% for rec in recommendations %}
+          <div class="recommendation-item {{ 'danger-border' if rec.impact == 'High' else ('warning-border' if rec.impact == 'Medium' else '') }}">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="fw-bold small text-dark d-flex align-items-center gap-2">
+                <i class="bi {{ rec.icon }} text-{{ rec.badge_color }} fs-5"></i>
+                <span>{{ rec.title }}</span>
+              </div>
+              <span class="badge bg-{{ rec.badge_color }}-subtle text-{{ rec.badge_color }}">{{ rec.category }}</span>
+            </div>
+
+            <p class="small text-muted mb-2">{{ rec.description }}</p>
+            <div class="p-2 bg-light rounded-2 small text-dark mb-2">
+              <strong>Action: </strong> {{ rec.action }}
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="small fw-semibold text-success">
+                <i class="bi bi-piggy-bank-fill me-1"></i> Save {{ rec.currency }}{{ rec.money_saved_monthly }}/mo
+              </span>
+              <span class="badge bg-light text-muted border small">{{ rec.kwh_saved_monthly }} kWh/mo</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Interactive Energy Saving Simulator -->
+  <div class="col-lg-6">
+    <div class="energy-card sticky-top" style="top: 90px;">
+      <div class="energy-card-header bg-dark text-white rounded-top-4" style="background: linear-gradient(135deg, #0f172a, #065f46) !important;">
+        <div class="energy-card-title text-white">
+          <i class="bi bi-sliders text-success"></i>
+          Energy Saving Simulator
+        </div>
+        <span class="badge bg-success text-white">Live Calculation</span>
+      </div>
+
+      <div class="energy-card-body">
+        <p class="text-muted small mb-3">
+          Adjust the sliders below to simulate different energy-saving behaviors and observe your projected monthly savings.
+        </p>
+
+        <!-- Baseline Inputs -->
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label small text-muted fw-semibold">Baseline Monthly (kWh)</label>
+            <input type="number" class="form-control form-control-sm bg-light" id="simInputBaseline" value="{{ baseline_monthly_kwh }}" min="10" step="10">
+          </div>
+          <div class="col-6">
+            <label class="form-label small text-muted fw-semibold">Tariff ({{ global_currency }}/kWh)</label>
+            <input type="number" class="form-control form-control-sm bg-light" id="simInputTariff" value="{{ tariff }}" min="1" step="0.5">
+          </div>
+        </div>
+
+        <!-- Slider 1: Air Conditioning -->
+        <div class="simulator-control-group">
+          <div class="sim-slider-header">
+            <span class="small fw-semibold text-dark"><i class="bi bi-snow text-info me-1"></i> Reduce AC / Cooling Usage</span>
+            <span class="badge bg-info-subtle text-info" id="simBadgeAC">15%</span>
+          </div>
+          <input type="range" class="form-range" id="simSliderAC" min="0" max="50" step="5" value="15">
+          <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem;">
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+          </div>
+        </div>
+
+        <!-- Slider 2: Lighting -->
+        <div class="simulator-control-group">
+          <div class="sim-slider-header">
+            <span class="small fw-semibold text-dark"><i class="bi bi-lightbulb text-warning me-1"></i> Optimize Lighting (LEDs / Sensors)</span>
+            <span class="badge bg-warning-subtle text-warning" id="simBadgeLighting">20%</span>
+          </div>
+          <input type="range" class="form-range" id="simSliderLighting" min="0" max="50" step="5" value="20">
+          <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem;">
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+          </div>
+        </div>
+
+        <!-- Slider 3: Appliances -->
+        <div class="simulator-control-group">
+          <div class="sim-slider-header">
+            <span class="small fw-semibold text-dark"><i class="bi bi-cpu text-primary me-1"></i> Reduce Appliance Usage</span>
+            <span class="badge bg-primary-subtle text-primary" id="simBadgeAppliances">10%</span>
+          </div>
+          <input type="range" class="form-range" id="simSliderAppliances" min="0" max="50" step="5" value="10">
+          <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem;">
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+          </div>
+        </div>
+
+        <!-- Slider 4: Shift Peak Hours -->
+        <div class="simulator-control-group">
+          <div class="sim-slider-header">
+            <span class="small fw-semibold text-dark"><i class="bi bi-clock-history text-danger me-1"></i> Shift Usage Away from Peak Hours</span>
+            <span class="badge bg-danger-subtle text-danger" id="simBadgePeak">25%</span>
+          </div>
+          <input type="range" class="form-range" id="simSliderPeak" min="0" max="50" step="5" value="25">
+          <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem;">
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+          </div>
+        </div>
+
+        <!-- Checkbox: Standby Elimination -->
+        <div class="form-check form-switch mb-4 p-2 bg-light rounded-3 ps-5 border">
+          <input class="form-check-input" type="checkbox" id="simCheckStandby" checked>
+          <label class="form-check-label small fw-semibold text-dark" for="simCheckStandby">
+            <i class="bi bi-plug-fill text-success me-1"></i> Eliminate Standby Vampire Power (Smart Strips)
+          </label>
+        </div>
+
+        <!-- Real-Time Projected Savings Output Box -->
+        <div class="p-3 rounded-3 text-white mb-3" style="background: linear-gradient(135deg, #059669, #0284c7);">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-semibold">Estimated Monthly Savings:</span>
+            <span class="fs-4 fw-bold" id="simOutMoneySavedMo">{{ global_currency }}{{ initial_sim.money_saved_monthly }}</span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="small opacity-75">Estimated Yearly Savings:</span>
+            <span class="fw-semibold" id="simOutMoneySavedYr">{{ global_currency }}{{ initial_sim.money_saved_yearly }}</span>
+          </div>
+
+          <!-- Progress Bar of Percentage Saved -->
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Overall Reduction</span>
+            <span class="fw-bold" id="simOutPercentSaved">{{ initial_sim.percentage_saved }}%</span>
+          </div>
+          <div class="progress bg-white bg-opacity-25" style="height: 10px;">
+            <div class="progress-bar bg-white rounded-pill" id="simOutProgressBar" role="progressbar" style="width: {{ initial_sim.percentage_saved }}%;"></div>
+          </div>
+        </div>
+
+        <!-- Detailed Breakdown Grid -->
+        <div class="row g-2 text-center small text-muted">
+          <div class="col-4">
+            <div class="p-2 bg-light rounded border">
+              <div>Energy Saved</div>
+              <strong class="text-success" id="simOutSavedKwh">{{ initial_sim.total_kwh_saved }} kWh</strong>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 bg-light rounded border">
+              <div>New Monthly Bill</div>
+              <strong class="text-dark" id="simOutProjectedBill">{{ global_currency }}{{ initial_sim.projected_monthly_cost }}</strong>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 bg-light rounded border">
+              <div>New Monthly kWh</div>
+              <strong class="text-primary" id="simOutProjectedKwh">{{ initial_sim.projected_monthly_kwh }} kWh</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+{% endblock %}

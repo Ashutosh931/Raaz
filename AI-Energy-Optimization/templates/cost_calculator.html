@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Electricity Cost Calculator{% endblock %}
+{% block page_title %}Electricity Cost Calculator{% endblock %}
+{% block page_subtitle %}Interactive tariff estimation, domestic tier slabs, and projected bills{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Calculator Input Form -->
+  <div class="col-lg-5">
+    <div class="energy-card">
+      <div class="energy-card-header">
+        <div class="energy-card-title">
+          <i class="bi bi-calculator-fill text-success"></i>
+          Tariff & Usage Calculator
+        </div>
+        <span class="badge bg-light text-dark border">Configurable Rates</span>
+      </div>
+
+      <div class="energy-card-body">
+        <form method="POST" action="{{ url_for('cost_calculator.cost_calculator_view') }}">
+          <div class="mb-3">
+            <label for="consumption_kwh" class="form-label fw-semibold small text-muted">Electricity Consumption (kWh)</label>
+            <div class="input-group">
+              <input type="number" step="0.1" min="0.1" class="form-control bg-light" id="consumption_kwh" name="consumption_kwh" value="{{ consumption_kwh }}" required autofocus>
+              <span class="input-group-text bg-light">kWh</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small text-muted">Input Period Basis</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="calc_type" id="type_daily" value="daily" {% if calc_type == 'daily' %}checked{% endif %}>
+                <label class="form-check-label small" for="type_daily">Daily Usage</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="calc_type" id="type_monthly" value="monthly" {% if calc_type == 'monthly' %}checked{% endif %}>
+                <label class="form-check-label small" for="type_monthly">Monthly Total</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label for="tariff" class="form-label fw-semibold small text-muted">Tariff Rate (per kWh)</label>
+              <div class="input-group">
+                <input type="number" step="0.1" min="0.1" class="form-control bg-light" id="tariff" name="tariff" value="{{ tariff }}" required>
+              </div>
+            </div>
+            <div class="col-6">
+              <label for="currency" class="form-label fw-semibold small text-muted">Currency Symbol</label>
+              <select class="form-select bg-light" id="currency" name="currency">
+                <option value="₹" {% if currency == '₹' %}selected{% endif %}>₹ (INR)</option>
+                <option value="$" {% if currency == '$' %}selected{% endif %}>$ (USD)</option>
+                <option value="€" {% if currency == '€' %}selected{% endif %}>€ (EUR)</option>
+                <option value="£" {% if currency == '£' %}selected{% endif %}>£ (GBP)</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary-custom w-100 py-2 justify-content-center">
+            <i class="bi bi-calculator me-1"></i> Calculate Electricity Bill
+          </button>
+        </form>
+
+        <div class="mt-4 pt-3 border-top small text-muted">
+          <strong class="text-dark d-block mb-1"><i class="bi bi-lightbulb text-warning me-1"></i> How cost is calculated:</strong>
+          Flat cost is calculated as \(\text{Cost} = \text{kWh} \times \text{Tariff Rate}\). For instance, 10 kWh at {{ currency }}8/kWh equals {{ currency }}80.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Column -->
+  <div class="col-lg-7">
+    {% if result %}
+      <!-- Flat Bill Cards -->
+      <div class="row g-3 mb-4 text-center">
+        <div class="col-6 col-sm-3">
+          <div class="p-3 bg-light rounded-3 border h-100">
+            <div class="small text-muted">Daily Cost</div>
+            <div class="fs-4 fw-bold text-dark">{{ result.currency }}{{ result.daily_cost }}</div>
+            <div class="small text-muted" style="font-size: 0.7rem;">{{ result.daily_kwh }} kWh</div>
+          </div>
+        </div>
+
+        <div class="col-6 col-sm-3">
+          <div class="p-3 bg-light rounded-3 border h-100">
+            <div class="small text-muted">Weekly Cost</div>
+            <div class="fs-4 fw-bold text-primary">{{ result.currency }}{{ result.weekly_cost }}</div>
+            <div class="small text-muted" style="font-size: 0.7rem;">{{ result.weekly_kwh }} kWh</div>
+          </div>
+        </div>
+
+        <div class="col-6 col-sm-3">
+          <div class="p-3 bg-success bg-opacity-10 rounded-3 border border-success border-opacity-25 h-100">
+            <div class="small text-success fw-semibold">Monthly Cost</div>
+            <div class="fs-4 fw-bold text-success">{{ result.currency }}{{ result.monthly_cost }}</div>
+            <div class="small text-success" style="font-size: 0.7rem;">{{ result.monthly_kwh }} kWh</div>
+          </div>
+        </div>
+
+        <div class="col-6 col-sm-3">
+          <div class="p-3 bg-light rounded-3 border h-100">
+            <div class="small text-muted">Yearly Projected</div>
+            <div class="fs-4 fw-bold text-dark">{{ result.currency }}{{ result.yearly_cost }}</div>
+            <div class="small text-muted" style="font-size: 0.7rem;">{{ result.yearly_kwh }} kWh</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tiered Progressive Slab Table -->
+      <div class="energy-card mb-4">
+        <div class="energy-card-header">
+          <div class="energy-card-title">
+            <i class="bi bi-layers-fill text-primary"></i>
+            Progressive Tiered Slab Estimation (Domestic Grid)
+          </div>
+          <span class="badge bg-light text-dark border">Effective Rate: {{ result.currency }}{{ result.tiered.effective_rate }}/kWh</span>
+        </div>
+
+        <div class="energy-card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-custom mb-0">
+              <thead>
+                <tr>
+                  <th>Slab Tier</th>
+                  <th>Consumption Range</th>
+                  <th>Applied Rate</th>
+                  <th>Billed Units</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge bg-success-subtle text-success">Tier 1 (Lifeline)</span></td>
+                  <td>{{ result.tiered.tier1.range }}</td>
+                  <td>{{ result.currency }}{{ result.tiered.tier1.rate }}/kWh</td>
+                  <td>{{ result.tiered.tier1.kwh }} kWh</td>
+                  <td class="fw-bold">{{ result.currency }}{{ result.tiered.tier1.cost }}</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-primary-subtle text-primary">Tier 2 (Standard)</span></td>
+                  <td>{{ result.tiered.tier2.range }}</td>
+                  <td>{{ result.currency }}{{ result.tiered.tier2.rate }}/kWh</td>
+                  <td>{{ result.tiered.tier2.kwh }} kWh</td>
+                  <td class="fw-bold">{{ result.currency }}{{ result.tiered.tier2.cost }}</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-danger-subtle text-danger">Tier 3 (Heavy)</span></td>
+                  <td>{{ result.tiered.tier3.range }}</td>
+                  <td>{{ result.currency }}{{ result.tiered.tier3.rate }}/kWh</td>
+                  <td>{{ result.tiered.tier3.kwh }} kWh</td>
+                  <td class="fw-bold">{{ result.currency }}{{ result.tiered.tier3.cost }}</td>
+                </tr>
+                <tr class="table-light">
+                  <td colspan="4" class="fw-bold text-end">Total Estimated Tiered Bill:</td>
+                  <td class="fw-bold fs-5 text-success">{{ result.currency }}{{ result.tiered.total_cost }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conservation Impact on Bill -->
+      <div class="energy-card">
+        <div class="energy-card-header">
+          <div class="energy-card-title">
+            <i class="bi bi-piggy-bank-fill text-success"></i>
+            Potential Monthly Bill Reductions
+          </div>
+        </div>
+        <div class="energy-card-body">
+          <div class="row g-3 text-center">
+            <div class="col-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <span class="badge bg-info-subtle text-info mb-1">10% Reduction</span>
+                <div class="fw-bold text-dark fs-5">{{ result.currency }}{{ result.savings.save_10_pct }}</div>
+                <div class="small text-muted">saved / month</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <span class="badge bg-primary-subtle text-primary mb-1">20% Reduction</span>
+                <div class="fw-bold text-primary fs-5">{{ result.currency }}{{ result.savings.save_20_pct }}</div>
+                <div class="small text-muted">saved / month</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-3 bg-light rounded-3 border">
+                <span class="badge bg-success-subtle text-success mb-1">30% Reduction</span>
+                <div class="fw-bold text-success fs-5">{{ result.currency }}{{ result.savings.save_30_pct }}</div>
+                <div class="small text-muted">saved / month</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
